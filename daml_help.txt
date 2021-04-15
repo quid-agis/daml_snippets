@@ -1,0 +1,34 @@
+Usage: daml COMMAND
+
+Available options:
+  -h,--help                Show this help text
+
+Available commands:
+  version                  Display Daml version information
+  install                  Install the specified SDK version
+  uninstall                Uninstall the specified SDK version
+  studio                   Launch Daml Studio
+  new                      Create a new Daml project
+  create-daml-app          Create a new Daml project based on create-daml-app
+  init                     Configure a folder as a Daml project
+  build                    Build the Daml project into a DAR file
+  test                     Run the scenarios in the given Daml file and all
+                           dependencies
+  start                    Launch Sandbox and Navigator for current Daml project
+  clean                    Delete build artifacts from project folder
+  damlc                    Run the Daml compiler
+  sandbox                  Launch Sandbox
+  sandbox-classic          Deprecated. Launch Sandbox Classic (the default
+                           Sandbox implementation for SDK <= 0.13.55)
+  navigator                Launch the Navigator
+  extractor                Launch the Extractor (early access)
+  ledger                   Interact with a Daml ledger
+  codegen                  Run a language bindings code generation tool
+  deploy                   Deploy Daml project to a ledger
+  json-api                 Launch the HTTP JSON API
+  trigger-service          Launch the trigger service
+  oauth2-middleware        Launch the OAuth 2.0 middleware
+  trigger                  Run a Daml trigger
+  script                   Run a Daml script
+  test-script              Run all Daml script tests in a DAR
+  repl                     Launch the Daml REPL
