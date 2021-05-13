@@ -1,15 +1,15 @@
 This is a simple tutorial on creating a basic Daml application, using an existing template.
 
-<h4>Select Daml Application Build Directory</h4>
+#### Select Daml Application Build Directory
 $ cd ~/Projects/
 
-<h4>Create the App</h4>
+#### Create the App
 $ daml new create-daml-app --template create-daml-app
 
-<h4>Change into the new Application</h4>
+#### Change into the new Application
 $ cd create-aml-app
 
-<h4>Inspect the Application structure</h4>
+#### Inspect the Application structure
 $ tree
 .
 ├── daml
