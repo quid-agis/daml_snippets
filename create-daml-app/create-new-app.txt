@@ -1,0 +1,49 @@
+This is a simple tutorial on creating a basic Daml application, using an existing template.
+
+<h4>Select Daml Application Build Directory</h4>
+$ cd ~/Projects/
+
+<h4>Create the App</h4>
+$ daml new create-daml-app --template create-daml-app
+
+<h4>Change into the new Application</h4>
+$ cd create-aml-app
+
+<h4>Inspect the Application structure</h4>
+$ tree
+.
+├── daml
+│   └── User.daml
+├── daml.yaml
+├── README.md
+└── ui
+    ├── package.json
+    ├── public
+    │   ├── daml.svg
+    │   ├── favicon.png
+    │   ├── index.html
+    │   └── manifest.json
+    ├── src
+    │   ├── components
+    │   │   ├── App.test.tsx
+    │   │   ├── App.tsx
+    │   │   ├── LoginScreen.tsx
+    │   │   ├── MainScreen.tsx
+    │   │   ├── MainView.tsx
+    │   │   ├── PartyListEdit.tsx
+    │   │   └── UserList.tsx
+    │   ├── config.ts
+    │   ├── Credentials.ts
+    │   ├── index.css
+    │   ├── index.tsx
+    │   ├── react-app-env.d.ts
+    │   └── setupProxy.js
+    └── tsconfig.json
+
+5 directories, 22 files
+
+
+
+
+
+
