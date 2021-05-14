@@ -1,0 +1,527 @@
+Testing Templates Using Daml Script (Military Instructional Format)
+
+### Preamble:
+
+I have been working through the documentation, starting at an [Introduction to Daml](https://docs.daml.com/daml/intro/0_Intro.html) and submitting feedback while doing that. After some feedback about the actual logical connections to the instructions and the referenced code, @nemanja suggested that I should rewrite one of the learning tutorials but using a slightly more structured style. Therefore, blame him :joy:
+
+In this instance I have based the teaching style of the tutorial on the Australian Army, LWP-G 7-1-2, The Instructors Handbook 2017. However the content itself is presented as a normal tutorial.
+
+### Tutorial:
+#### Header:
+-- Copyright (c) 2021 Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
+-- SPDX-License-Identifier: Apache-2.0
+
+-- Modified:  Quid Agis
+-- Title:  Testing Templates Using Daml Script (Military Instructional Format)
+-- Email:  quid.agis.dev [ at ] outlook.com
+-- Date:  11 April 2021
+-- Version:  0.025
+
+-- Title:  An Introduction to Daml
+-- URI:  https://docs.daml.com/daml/intro/0_Intro.html
+
+-- Source:  The Blueprint for a Lesson
+-- URI:  https://cove.army.gov.au/article/blueprint-lesson
+-- Reference:  LWP-G 7-1-2 The Instructors Handbook 2017
+
+-- Requirements:
+--
+-- System:  64 Bit Operating System Debian-variant
+--          Daml Connect SDK, installation via:
+--          https://docs.daml.com/getting-started/installation.html
+--          daml new daml-intro-2 --template daml-intro-2
+
+#### Introduction
+
+#### Preliminaries
+- A functional computer system that supports Daml
+- An Internet connection
+- A basic competence with using the Linux command line
+- Installed the 'daml-intro-2' code
+
+#### Lesson Revision
+Remember that Daml is a programming language that allows you to create a smart contract, from as simple as a self-assigning token to a complex, international trading application. It is written using Scala and was designed to abstract away programmatic complexity, to allow rapid learning by a wider range of users.
+
+#### Revision Questions
+- How do you invoke the Daml REPL on the command line?
+- How do you exit the Daml REPL on the command line?
+- What is the file extension used for Daml applications?
+- Can the Daml file name and the Module be different terms?
+
+#### Approach
+In this tutorial you will learn about the structure of a Daml Ledger, and how to write Daml applications that will run on any Daml Ledger implementation. The reason you are learning this is so you will be able to develop quality Daml applications, using the Write-Once-Run-Anywhere model.
+
+As Daml developers and users, you need to continually extend your knowledge to broaden your operational utility. At the end of this tutorial, you will be able to design, write and test a simple but valid application that issues, verifies and archives self-assigned tokens.
+
+#### A basic contract
+In this next section, you will write a very simple contract, that will do nothing more than self-issue a non-transferable token. This will teach you the basics of a smart contract, which are; Transactions, Daml modules & files; Templates; Contracts and Signatories.
+
+##### Ledgers:
+A Daml Ledger is just a list of commits. When we say commit, we mean the final result of when a party successfully submits a transaction to the ledger.
+##### Transaction:
+The most basic examples are the creation and archival of a contract.
+##### Contract:
+A contract is active from the point where there is a committed transaction that creates it, up to the point where there is a committed transaction that archives it.
+
+**Note**: Contracts are immutable in the sense that an active contract can not be changed. An active contract can only be changed set by creating a new contract, or archiving an old one. Daml specifies what transactions are legal on a Daml Ledger. The rules the Daml code specifies are collectively called a Daml model or contract model.
+
+#### Action
+# Change to the 'daml-intro-2' directory
+$ cd ~/daml-intro-2
+# Delete the current *.daml file
+$ rm -f daml/*.daml
+# Create a new file titled 'Token_Test.daml' with the following code:
+$ touch daml/Token_Test.daml
+
+[details="vim daml/Token_Test.daml"]
+
+-- Copyright (c) 2021 Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
+-- SPDX-License-Identifier: Apache-2.0
+
+module Token_Test where
+
+import Daml.Script
+
+template Token
+  with
+    owner : Party
+  where
+    signatory owner
+[/details]
+
+#### Key Points
+- The module name must match the file name (Token_Test.daml)
+- Each must be declared with the `template` keyword, and it has a `with` block defining the data type of the data stored on an instance of that contract.
+- Blocks are indicated through indentation. The `template` is a block, requiring `with` to be indented, and the contents of the `with` are then indented further.
+- In this simple contract, the only field use is `owner`, and it is also the `Party`
+- Each contract has at least one `where` block, and in this case, that contains the `signatory` expression.
+- The `signatory` can define one or more parties, authorises the creation of the contract and verifies the validity of any action performed on it.
+
+Now that you have written a basic contract, you can see how simple it is, and you will use this method as the basis for all further contracts in the future.
+
+Next, you will learn how to test templates using Daml Script, the inbuilt script language, with the basic, smart contract that you have just written.
+
+In this next section, you will test the Token module from the first stage, using Daml Script testing in the command line. In addition to that, you will learn the basics features of Allocating parties; submitting transactions; creating contracts; testing for failure; archiving contracts and viewing ledger & final ledger state.
+
+##### Script:
+A script is like a recipe for a test, where you can script different parties submitting a series of transactions, to check that your templates behave as you’d expect.
+##### Creating contracts:
+Uses the createCmd, which creates an object, then assigns ownership of that object to an authorised Party. However the Party must be assigned and placed onto the ledger before the contract is created, otherwise there will be no binding between the Owner and the Object.
+##### Testing for failure:
+Is using a script to verify the logic of the contract, to ensure that the authorised Party cannot create an Object for another Party, and vice versa.
+##### Archiving contracts:
+Works just like creating them, but using archiveCmd instead of createCmd. Where createCmd takes an instance of a template, archiveCmd takes a reference to a contract.
+
+#### Action
+Open the file titled 'Token_Test.daml' and modify to:
+[details="vim daml/Token_Test.daml"]
+
+-- Copyright (c) 2021 Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
+-- SPDX-License-Identifier: Apache-2.0
+
+module Token_Test where
+
+import Daml.Script
+
+template Token
+    owner : Party
+  where
+    signatory owner
+
+-- Test block 1
+token_test_1 = script do
+  alice <- allocateParty "Alice"
+  submit alice do
+    createCmd Token with owner = alice
+[/details]
+
+#### Key Points
+- Declare a Script as a top-level variable and introduce it using script do. do always starts a block, and therefore the rest of the script is indented.
+- Prior to creating any Token contracts, one or more Parties must exist on the test ledger.
+- Use of <- instead of = as allocateParty is an Action that can only be performed once the Script is run in the context of a ledger. <- means “run the action and bind the result”.
+- The argument "Alice" to allocateParty does not have to be enclosed in brackets.
+- As Script is a recipe for a test, so is Commands a recipe for a transaction.
+- createCmd Token with owner = alice is a Commands, which translates to a list of commands that will be submitted to the ledger creating a transaction which creates a Token with owner Alice.
+
+Now, that you have allocated the term 'Party' to Alice, and created a Token that is owned by Alice, you can execute a test against the code so far in the command line.
+
+# Test the code, ensure to use the full path to the *.daml
+$ daml damlc -- test --files daml/Token_Test.daml
+daml/Token_Test.daml:token_test_1: ok, 1 active contracts, 1 transactions.
+test coverage: templates 100%, choices 0%
+
+The results of the test indicate that there is one active contract, and one transaction, which is what we would expect to see. If there are any errors, review the above steps, and try again.
+
+Next, you will learn how to test templates using Daml Script, the inbuilt script language, with the basic, smart contract that you have just written.
+
+To do this, you will use the previous knowledge from Basic Contracts to test the statement that Alice should not be able to create a Token for another Party, and another Party should not be able  to create a Token for Alice.
+
+#### Action
+Open the file titled 'Token_Test.daml' and modify to:
+[details="vim daml/Token_Test.daml"]
+-- Copyright (c) 2021 Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
+-- SPDX-License-Identifier: Apache-2.0
+
+module Token_Test where
+
+import Daml.Script
+
+-- The Token template from section 1
+template Token
+  with
+    owner : Party
+  where
+    signatory owner
+
+-- Daml Scripts are specified as top-level variables of type `Script a`. `do` always
+-- introduces a block.
+token_test = do
+  -- The `allocateParty` function allocates a new party.
+  -- The `<-` notation _binds_ the result to a variable.
+  alice <- allocateParty "Alice"
+
+  -- The `submit` keyword allows a party to submit a transaction to the ledger.
+  -- Bob and Alice can self-issue tokens as their authority is available to sign the
+  -- Tokens within the transaction submitted by them.
+  submit alice do
+    createCmd Token with owner = alice
+
+  bob <- allocateParty "Bob"
+  submit bob do
+    createCmd Token with owner = bob
+[/details]
+
+Now, you have added another Party, Bob, to the contract using the 'allocateParty' cmd, followed by creating another token, owned by Bob.
+
+#### Key Points
+- Ensure that you maintain the correct indentation on subsequent Party additions
+- Ensure that the object, in this case 'Token' is named correctly in additions
+
+# Next, test the code, ensure to use the full path to the *.daml
+$ daml damlc -- test --files daml/Token_Test.daml
+daml/Token_Test.daml:token_test: ok, 2 active contracts, 2 transactions.
+test coverage: templates 100%, choices 0%
+
+The results of this test indicate no errors, two active contracts and two transactions. Now that you have written a basic contract, added Alice & Bob as Parties to the contract, with each Party self-assigning a Token to themself, you need to extend this contract, and build in testing routines by default.
+
+Next, you will learn how to test the contract to verify that Alice cannot create a Token for Bob, and vice versa.
+
+#### Action
+Open the file titled 'Token_Test.daml' and modify to:
+[details="vim daml/Token_Test.daml"]
+-- Copyright (c) 2021 Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
+-- SPDX-License-Identifier: Apache-2.0
+
+module Token_Test where
+  
+import Daml.Script
+
+-- The Token template from section 1
+template Token
+  with
+    owner : Party
+  where
+    signatory owner
+
+-- Daml Scripts are specified as top-level variables of type `Script a`. `do` always
+-- introduces a block.
+token_test = do
+  -- The `allocateParty` function allocates a new party.
+  -- The `<-` notation _binds_ the result to a variable.
+  alice <- allocateParty "Alice"
+  
+  -- The `submit` keyword allows a party to submit a transaction to the ledger.
+  -- Bob and Alice can self-issue tokens as their authority is available to sign the
+  -- Tokens within the transaction submitted by them.
+  submit alice do
+    createCmd Token with owner = alice
+  
+  bob <- allocateParty "Bob"
+  submit bob do
+    createCmd Token with owner = bob
+  
+failing_test_1 = do
+  alice <- allocateParty "Alice"
+  bob <- allocateParty "Bob"
+  submit alice do
+    createCmd Token with owner = bob
+  submit bob do
+    createCmd Token with owner = alice
+[/details]
+
+#### Key Points
+- Ensure that you maintain the correct indentation on subsequent Party additions
+- Ensure that the Parties real names are stylised as "Name", but assigned as 'name'
+
+# Next, test the code, ensure to use the full path to the *.daml
+$ daml damlc -- test --files daml/Token_Test.daml
+File:     daml/Token_Test.daml
+hidden:   no
+Range:    35:1-35:15
+Source:   Script
+Severity: DsError
+Message: 
+  Scenario execution failed on commit at Token_Test:38:3:
+  0: create of Token_Test:Token at DA.Internal.Template.Functions:216:3
+  failed due to a missing authorization from 'Bob'
+
+  Ledger time: 1970-01-01T00:00:00Z
+
+  Partial transaction:
+  Sub-transactions:
+  0
+  └─> create Token_Test:Token
+  with
+  owner = 'Bob'
+daml/Token_Tes.daml:token_test: ok, 2 active contracts, 2 transactions.
+
+The results of this show that the first assertion of Alice cannot assign a Token to Bob, is programmatically correct, however the aim was to also test if Bob could or could not assign a Token to Alice. In this instance, that did not occur and the test has failed.
+
+Next, you will learn how to make a test pattern termed 'submitMustFail'. The use of this new term will allow you to test for multiple use cases, and even if one test fails, the testing routine will continue.
+
+#### Action
+Open the file titled 'Token_Test.daml' and modify to:
+[details="vim daml/Token_Test.daml"]
+-- Copyright (c) 2021 Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
+-- SPDX-License-Identifier: Apache-2.0
+
+module Token_Test where
+
+import Daml.Script
+
+-- The Token template from section 1
+template Token
+  with
+    owner : Party
+  where
+    signatory owner
+
+-- Daml Scripts are specified as top-level variables of type `Script a`. `do` always
+-- introduces a block.
+token_test = do
+  -- The `allocateParty` function allocates a new party.
+  -- The `<-` notation _binds_ the result to a variable.
+  alice <- allocateParty "Alice"
+
+  -- The `submit` keyword allows a party to submit a transaction to the ledger.
+  -- Bob and Alice can self-issue tokens as their authority is available to sign the
+  -- Tokens within the transaction submitted by them.
+  submit alice do
+    createCmd Token with owner = alice
+
+  bob <- allocateParty "Bob"
+  bobToken <- submit bob do
+    createCmd Token with owner = bob
+
+  -- If a single statement in a Script fails, the whole Script fails at that point.
+  -- To test failure of more than one submission in a single Script, we need a different
+  -- keyword `submitMustFail`, which succeeds when the submitted transaction fails.
+  -- Alice and Bob cannot issue Tokens to each other, as neither has the authority to put
+  -- the other's signature on the Token.
+
+submitMustFail alice do
+    createCmd Token with owner = bob
+  submitMustFail bob do
+    createCmd Token with owner = alice
+
+  -- `archive` is symmetric to `create`. Bob and Alice can't archive each other's
+  -- Tokens, but they can archive their own.
+  submitMustFail alice do
+    archiveCmd bobToken
+
+  submit bob do
+    archiveCmd bobToken
+
+-- TOKEN_TEST_1_BEGIN
+token_test_1 = script do
+  alice <- allocateParty "Alice"
+  submit alice do
+    createCmd Token with owner = alice
+-- TOKEN_TEST_1_END
+
+-- TOKEN_TEST_2_BEGIN
+token_test_2 = do
+  alice <- allocateParty "Alice"
+  bob <- allocateParty "Bob"
+
+  submitMustFail alice do
+    createCmd Token with owner = bob
+  submitMustFail bob do
+    createCmd Token with owner = alice
+
+  submit alice do
+    createCmd Token with owner = alice
+  submit bob do
+    createCmd Token with owner = bob
+-- TOKEN_TEST_2_END
+[/details]
+
+#### Key Points
+- Ensure that the test routines are carefully checked.
+- If you Copy & Paste, watch for unwanted spaces, lines and odd indentation.
+- submitMustFail never has an impact on the ledger
+- Alice and Bob cannot see each others’ Tokens.
+
+# Next, test the code, ensure to use the full path to the *.daml
+$ daml damlc -- test --files daml/Token_Test.daml
+daml/Token_Test.daml:token_test: ok, 1 active contracts, 3 transactions.
+daml/Token_Test.daml:token_test_1: ok, 1 active contracts, 1 transactions.
+daml/Token_Test.daml:token_test_2: ok, 2 active contracts, 2 transactions.
+test coverage: templates 100%, choices 100%
+
+The results of this show that the testing function to check if Alice cannot assign a Token to Bob is programmatically correct, as is the test to check if Bob is unable to assign a Token to Alice. All the tests has passed successfully.
+
+Next, you will learn how to make archive a contract. The use of this new command will allow you to test and modify contracts. However, always remember that Daml does not update a contract in the normal sense of file processing, instead it takes the existing copy of the contract and archives it into the records. From there, any modifications are in fact written into a totally new contract.
+
+Archiving contracts works just like creating them, but using archiveCmd instead of createCmd. Where createCmd takes an instance of a template, archiveCmd takes a reference to a contract.
+
+#### Action
+Open the file titled 'Token_Test.daml' and modify to:
+[details="vim daml/Token.daml"]
+-- Copyright (c) 2021 Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
+-- SPDX-License-Identifier: Apache-2.0
+
+module Token_Test where
+
+import Daml.Script
+
+-- The Token template from section 1
+template Token
+  with
+    owner : Party
+  where
+    signatory owner
+
+-- Daml Scripts are specified as top-level variables of type `Script a`. `do` always
+-- introduces a block.
+token_test = do
+
+  -- The `allocateParty` function allocates a new party.
+  -- The `<-` notation _binds_ the result to a variable.
+  alice <- allocateParty "Alice"
+
+  -- The `submit` keyword allows a party to submit a transaction to the ledger.
+  -- Bob and Alice can self-issue tokens as their authority is available to sign the
+  -- Tokens within the transaction submitted by them.
+  submit alice do
+    createCmd Token with owner = alice
+
+  bob <- allocateParty "Bob"
+  bobToken <- submit bob do
+    createCmd Token with owner = bob
+
+  -- If a single statement in a Script fails, the whole Script fails at that point.
+  -- To test failure of more than one submission in a single Script, we need a different
+  -- keyword `submitMustFail`, which succeeds when the submitted transaction fails.
+  -- Alice and Bob cannot issue Tokens to each other, as neither has the authority to put
+  -- the other's signature on the Token.
+  submitMustFail alice do
+    createCmd Token with owner = bob
+  submitMustFail bob do
+    createCmd Token with owner = alice
+  -- `archive` is symmetric to `create`. Bob and Alice can't archive each other's
+  -- Tokens, but they can archive their own.
+  submitMustFail alice do
+    archiveCmd bobToken
+
+  submit bob do
+    archiveCmd bobToken
+
+-- TOKEN_TEST_1_BEGIN
+token_test_1 = script do
+  alice <- allocateParty "Alice"
+  submit alice do
+    createCmd Token with owner = alice
+-- TOKEN_TEST_1_END
+
+{-
+-- FAILURE_TEST_1_BEGIN
+failing_test_1 = do
+  alice <- allocateParty "Alice"
+  bob <- allocateParty "Bob"
+  submit alice do
+    createCmd Token with owner = bob
+  submit bob do
+    createCmd Token with owner = alice
+-- FAILURE_TEST_1_END
+-}
+
+-- TOKEN_TEST_2_BEGIN
+token_test_2 = do
+  alice <- allocateParty "Alice"
+  bob <- allocateParty "Bob"
+
+  submitMustFail alice do
+    createCmd Token with owner = bob
+  submitMustFail bob do
+    createCmd Token with owner = alice
+
+  submit alice do
+    createCmd Token with owner = alice
+  submit bob do
+    createCmd Token with owner = bob
+-- TOKEN_TEST_2_END
+
+-- TOKEN_TEST_3_BEGIN
+token_test_3 = do
+  alice <- allocateParty "Alice"
+  bob <- allocateParty "Bob"
+
+  alice_token <- submit alice do
+    createCmd Token with owner = alice
+
+  submitMustFail bob do
+    archiveCmd alice_token
+
+  submit alice do
+    archiveCmd alice_token
+-- TOKEN_TEST_3_END
+[/details]
+
+#### Key Points
+- Ensure that the test routines are carefully checked.
+- If you Copy & Paste, watch for unwanted spaces, lines and odd indentation.
+- submitMustFail never has an impact on the ledger
+- Alice and Bob cannot see each others' Tokens.
+- Alice and Bob cannot archive each others' Tokens.
+
+# Next, test the code, ensure to use the full path to the *.daml
+$ daml damlc -- test --files daml/Token_Test.daml
+daml/Token_Test.daml:token_test: ok, 1 active contracts, 3 transactions.
+daml/Token_Test.daml:token_test_1: ok, 1 active contracts, 1 transactions.
+daml/Token_Test.daml:token_test_2: ok, 2 active contracts, 2 transactions.
+daml/Token_Test.daml:token_test_3: ok, 0 active contracts, 2 transactions.
+test coverage: templates 100%, choices 100%
+
+The results of this test are:
+- Bob cannot archive Alice's Token, then Alice successfully archives it.
+- Alice cannot archive Bob's Token, then Bob successfully archives it.
+- The templates have all executed successfully, with two complete transactions.
+- There are no more active transactions on the ledger.
+
+Using this tutorial, you have successfully written a simple contract that has started as the self-assigning of one Token by one Party, to multiple parties, assigning Tokens. You have also tested the assertion that one Party cannot archive another party's Token without authorisation and have done so using three valid and successful tests, with the Daml Scripting Language.
+
+In addition to that, you have learned about the Daml Ledger model and are now able to use the Write-Once-Run-Anywhere model to support your applications. You have also successfully undertaken this while using the command line only, on a Linux operating system.
+
+Some key points to remember; always use a Party's Name in a contract using "Name", but assign the Party using 'name'. Also be mindful of the contract indentation, especially if working on the command line, as it lacks a visual warning device unlike most Daml-supported IDEs. Also remember that once a contract has successfully executed, that it has been archived, by at least one of the parties, and as such is no longer visible on the ledger.
+
+The reason that you have learned these methods, is that you, as current or future Daml developers & users can efficiently, accurately and reliably design, develop and execute smart contracts on a ledger, either in testing or in production.
+
+The next tutorial in the Daml learning flow is Data Types. In that tutorial you will learn about Daml’s type system, and how you can think of templates as tables and contracts as database rows.
+
+Any questions, reply through the forum.
+
+**Conclusion:**
+
+It has been a *long* time since I wrote a military-based training document, and this is the first time I have done so in relation to Software. It is quite straightforward to write a lesson plan(s) to teach a physical task, for example, digging a basic, One Soldier, Defensive Pit or setting up Barbed-wire barricades.
+
+However trying to do this for Software was challenging but instructive nonetheless. I was quite surprised at the amount of time that it took as I had to deal with multiple issues such as:
+- Find a suitable training advisory template [Training video](https://cove.army.gov.au/article/blueprint-lesson)
+- Deconstruct the whole 9:31 minutes into bullet points
+- Review the existing Daml documentation, and capture the core elements
+- Insert those elements into the modified military lesson plan
+- and so on
+
+Looking at the amount of existing Daml documentation, converting it into a more structured style would be a non-trivial task. Regardless, I hope that the community at least finds the style something to consider for their own needs, or perhaps justification to *never* do this themselves :joy:
+
+Also many thanks to the excellent Daml Documentation Team, you do great stuff :+1:t2:
