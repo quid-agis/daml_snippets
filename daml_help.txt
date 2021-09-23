@@ -1,3 +1,6 @@
+### View Daml all available Help commands
+```
+$ daml --help
 Usage: daml COMMAND
 
 Available options:
@@ -32,3 +35,4 @@ Available commands:
   script                   Run a Daml script
   test-script              Run all Daml script tests in a DAR
   repl                     Launch the Daml REPL
+```
